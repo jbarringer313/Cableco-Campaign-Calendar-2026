@@ -1325,6 +1325,7 @@ function load() {
 // ── Undo stack ─────────────────────────────────
 const UNDO_LIMIT = 30;
 const undoStack = [];
+let fbPauseListener = false; // pauses Firebase listener during undo writes
 
 function pushUndo() {
   undoStack.push(JSON.stringify(data));
@@ -1344,22 +1345,30 @@ function undoLastAction() {
   if (!undoStack.length) return;
   data = JSON.parse(undoStack.pop());
   updateUndoBtn();
-  // Write restored state back to Firebase / localStorage
-  if (fbMode && db) {
-    const encoded = {};
-    Object.entries(data).forEach(([k,v]) => { encoded[toFbKey(k)] = v; });
-    db.ref('/campaigns').set(encoded);
-  } else {
-    localStorage.setItem('pega_me_cal_v3', JSON.stringify(data));
-  }
   render();
   updateKPIs();
   showToast('↩ Undone');
+  // Write restored state to Firebase while pausing the listener so it
+  // doesn't fire with a stale value and overwrite what we just rendered
+  if (fbMode && db) {
+    fbPauseListener = true;
+    const encoded = {};
+    Object.entries(data).forEach(([k,v]) => { encoded[toFbKey(k)] = v; });
+    // Use null if no campaigns (Firebase deletes empty nodes)
+    const payload = Object.keys(encoded).length ? encoded : null;
+    db.ref('/campaigns').set(payload)
+      .then(() => { fbPauseListener = false; })
+      .catch(() => { fbPauseListener = false; });
+    // Safety valve — always unpause after 4s even if .then never fires
+    setTimeout(() => { fbPauseListener = false; }, 4000);
+  } else {
+    localStorage.setItem('pega_me_cal_v3', JSON.stringify(data));
+  }
 }
 // ───────────────────────────────────────────────
 
 function save() {
-  pushUndo();
+  // Note: pushUndo() must be called BEFORE modifying data, not here
   if (fbMode && db) {
     const encoded = {};
     Object.entries(data).forEach(([k,v]) => { encoded[toFbKey(k)] = v; });
@@ -1412,6 +1421,7 @@ function startFirebase(cfg) {
 
     // Real-time campaign sync
     db.ref('/campaigns').on('value', snap => {
+      if (fbPauseListener) return; // suppress during undo writes
       const raw = snap.val() || {};
       data = {};
       Object.entries(raw).forEach(([k,v]) => { data[fromFbKey(k)] = v; });
@@ -1898,6 +1908,7 @@ function saveCampaign() {
     document.getElementById('f-ctitle').focus();
     return;
   }
+  pushUndo();
   data[modalKey] = {
     theme:  selectedThemeVal,
     domain: selectedDomainVal,
@@ -1912,6 +1923,7 @@ function saveCampaign() {
 
 function deleteCampaign() {
   if (!confirm('Remove this campaign entry?')) return;
+  pushUndo();
   delete data[modalKey];
   save(); render(); closeModal();
 }
@@ -1933,9 +1945,9 @@ function openDupPicker() {
   ALL_PERIODS.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.key;
-    const mon = p.key.slice(0,7); // e.g. "2026-06"
-    const monLabel = new Date(p.key + 'T12:00:00').toLocaleString('default', { month: 'long' });
-    opt.textContent = `${monLabel} 2026 — ${p.shortLabel}`;
+    // Use label/shortLabel computed at generation time (local timezone safe)
+    const monName = p.label.split(' ')[0]; // "Jun" from "Jun" or "Jun 15"
+    opt.textContent = `${monName} 2026 — ${p.shortLabel}`;
     if (p.key === srcPkey) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -2026,13 +2038,13 @@ function confirmDuplicate() {
   if (!dupSourceKey || !data[dupSourceKey]) return;
   const src = data[dupSourceKey];
   const checked = document.querySelectorAll('#dup-grid .dup-cb:checked');
+  pushUndo();  // snapshot BEFORE modifying data
   checked.forEach(cb => {
     const k = cb.closest('.dup-row').dataset.key;
     data[k] = Object.assign({}, src, { ts: Date.now() });
   });
   const count = checked.length;
   save(); render(); closeDupPicker();
-  // Brief toast notification
   showToast(`✅ Copied to ${count} row${count > 1 ? 's' : ''}`);
 }
 
@@ -2088,6 +2100,7 @@ function setupDropOnCell(td, targetKey) {
       if (!confirm(`"${existingTarget}" is already here. Replace it?`)) return;
     }
 
+    pushUndo();  // snapshot BEFORE modifying data
     data[targetKey] = Object.assign({}, srcData, { ts: Date.now() });
 
     if (!altHeld) {
@@ -2948,6 +2961,57 @@ Happy to run a quick demo if that\'s more useful than a slide deck.`,
     keyMessages:['Pre-built cable Microjourneys: disconnect, plan change, outage, equipment — ready to configure','AI-guided agent assist surfaces next best action in real time during calls','Omnichannel: unified case view across phone, chat, self-serve, and field','Disconnect retention flow: churn risk score + ranked offers at point of cancellation'],
     body:`Hi [Name],\n\nB2C customer service in cable carries one of the highest contact volumes in any industry, and satisfaction scores rarely reflect the effort your team puts in. The challenge is usually structural — agents across disconnected channels, no unified view of the subscriber, and retention logic that lives in someone's head rather than the system.\n\nPega Customer Service for Communications ships with pre-built cable Microjourneys — disconnect, plan change, outage management — ready to configure, not build from scratch. Agents get AI-guided next best action in the moment. The disconnect flow specifically, where churn risk and retention offers surface at point of cancellation, has been a strong performer for operators reducing voluntary churn.\n\nHappy to walk through a demo tailored to [Account]'s contact center priorities.`,
     cta:'Could set up a demo around your highest-volume contact types. Interested?', notes:'Good for VP Customer Experience, Director Contact Center, VP Operations.', createdAt:1700002009000 },
+
+  // ── B2C Sales ──
+  'tpl-b2c-sales-cs': { id:'tpl-b2c-sales-cs', name:'Sales — C-Suite', theme:'B2C', domain:'Customer Engagement', targetTier:'C-Suite', contentType:'Cold Outreach',
+    subject:'Growing subscriber ARPU through AI-driven upsell at every touchpoint',
+    keyMessages:['Pega CDH identifies upsell/cross-sell opportunities in real time across every subscriber interaction','Ranked offers surfaced to agents, in self-serve, and in outbound campaigns simultaneously','One cable operator grew ARPU 18% in 12 months using next-best-offer decisioning','No rip-and-replace — works alongside your existing CRM and billing stack'],
+    body:`Hi [Name],\n\nSubscriber acquisition costs in cable continue to rise while organic growth slows. The clearest path to revenue growth is making more from your existing base — but most operators are still relying on broad promotional segments rather than individual-level upsell signals.\n\nPega's Customer Decision Hub identifies the right offer for each subscriber in real time — whether they're calling in, browsing the portal, or opening an email — and surfaces ranked recommendations to agents, digital channels, and outbound campaigns simultaneously. One cable operator grew ARPU by 18% in 12 months without increasing marketing spend.\n\nWorth 20 minutes to explore how [Account] is approaching subscriber revenue growth this year?`,
+    cta:'Happy to connect — what does your calendar look like this week?', notes:'Strong for Chief Revenue Officer, CEO, CCO. Lead with ARPU growth — tie to organic revenue in a saturated market.', createdAt:1700003001000 },
+
+  'tpl-b2c-sales-vp': { id:'tpl-b2c-sales-vp', name:'Sales — VP/Director', theme:'B2C', domain:'Customer Engagement', targetTier:'VP/Director', contentType:'Cold Outreach',
+    subject:'Turning every subscriber interaction into a qualified upsell moment',
+    keyMessages:['Real-time next-best-offer decisioning during inbound calls, chat, and self-service','Ranked offer list for agents — removes guesswork, improves conversion','Pega learns from every accepted/declined offer to sharpen future recommendations','Pre-built integration with major cable billing and CRM platforms'],
+    body:`Hi [Name],\n\nMost upsell programs in cable are campaign-driven — outbound segments pushed out on a schedule, disconnected from what's actually happening with each subscriber right now. The result is low conversion and offers that arrive at the wrong moment.\n\nPega's approach connects upsell logic to every live interaction. When a subscriber calls in about a billing question, the agent sees a ranked list of contextually relevant offers — based on that subscriber's usage, tenure, and propensity — not a generic promotion. Self-service and digital channels get the same treatment.\n\nI'd love to show you how this works in a cable contact center environment. 30 minutes — worth it?`,
+    cta:'Could tailor a walkthrough to your inbound contact types. Interested?', notes:'Good for VP Sales, Director Revenue Growth, Director Telesales. Emphasize agent-guided upsell during inbound calls.', createdAt:1700003002000 },
+
+  'tpl-b2c-sales-fl': { id:'tpl-b2c-sales-fl', name:'Sales — Frontline', theme:'B2C', domain:'Customer Engagement', targetTier:'Frontline', contentType:'Cold Outreach',
+    subject:'Giving your sales team real-time intelligence on every subscriber they engage',
+    keyMessages:['Next-best-offer surfaced to agents instantly at point of contact','Single subscriber view: tenure, usage, churn risk, past offers — all in one screen','Reduces average handle time while improving upsell conversion','Configurable by your team — no developer needed to adjust offer logic'],
+    body:`Hi [Name],\n\nYour agents are handling hundreds of subscriber interactions every day — and the difference between a retained customer and a churned one often comes down to whether the agent had the right information at the right moment.\n\nPega gives agents a real-time subscriber intelligence view — tenure, usage, churn risk score, recent interactions, and a ranked set of next-best offers — all surfaced in the moment of contact, not buried in three different systems. Offer logic is managed by your team, not IT, so you can adjust it as promotions change.\n\nHappy to show you what this looks like in a cable agent desktop. 20 minutes?`,
+    cta:'Could set up a quick live demo. What works for your schedule?', notes:'Good for Director Telesales, Sales Supervisor, Head of Inbound Sales. Very tactical — focus on agent desktop experience.', createdAt:1700003003000 },
+
+  // ── B2C Marketing ──
+  'tpl-b2c-mkt-cs': { id:'tpl-b2c-mkt-cs', name:'Marketing — C-Suite', theme:'B2C', domain:'Customer Engagement', targetTier:'C-Suite', contentType:'Cold Outreach',
+    subject:'Replacing batch-and-blast with always-on, 1:1 subscriber marketing',
+    keyMessages:['Pega CDH replaces campaign-based marketing with continuous individual decisioning','Real-time signals: usage drops, plan changes, competitor activity, life events','200% improvement in email open rates; 40% lift in engagement — cable operator peer','Marketer-controlled strategy — no ongoing IT dependency to change offer logic'],
+    body:`Hi [Name],\n\nScheduled campaigns will always be a part of the marketing mix — but they're a blunt instrument when subscriber behavior changes faster than your batch cycles run. The operators gaining ground on engagement and retention are shifting from calendar-based campaigns to always-on decisioning that responds to each subscriber's context in real time.\n\nPega's Customer Decision Hub runs continuously in the background — monitoring each subscriber's signals and determining the right message, offer, or action across email, push, web, and care in real time. Your marketing team owns the strategy; the AI executes it at scale. One peer saw 200% improvement in email open rates and a 40% lift in overall engagement.\n\nWorth 20 minutes to compare notes on where [Account]'s subscriber marketing is headed?`,
+    cta:'Happy to connect — what does your calendar look like?', notes:'Strong for CMO, Chief Digital Officer. Lead with the shift from campaign-led to always-on. Use the 200%/40% stats.', createdAt:1700003004000 },
+
+  'tpl-b2c-mkt-vp': { id:'tpl-b2c-mkt-vp', name:'Marketing — VP/Director', theme:'B2C', domain:'Customer Engagement', targetTier:'VP/Director', contentType:'Cold Outreach',
+    subject:'From CRM segments to real-time 1:1 subscriber decisions at scale',
+    keyMessages:['Individual-level decisioning — each subscriber gets the right message for their context, not their segment','Pega works alongside your existing CRM, ESP, and marketing stack','Continuous learning loop: every outcome improves the next decision automatically','Marketer-controlled decision logic — adjust strategies without IT involvement'],
+    body:`Hi [Name],\n\nSegmentation-based CRM gets you so far — but when two subscribers are in the same segment yet at completely different lifecycle stages, a single message will be right for one and wrong for the other. Most marketing teams I talk to are aware of this gap and are looking for a practical path to true personalization at scale.\n\nPega's approach is individual-level decisioning — each subscriber's real-time context (usage patterns, care history, offer history, engagement signals) drives what they receive and when, across every channel. Your team sets the strategy; Pega executes it for each person individually. It layers on top of your existing CRM and marketing stack rather than replacing it.\n\nHappy to walk through how this works in practice for a team at [Account]'s scale — 30 minutes.`,
+    cta:'Worth a 30-minute walkthrough? I can tailor it to your current marketing stack.', notes:'Good for VP Marketing, Director CRM, Director Digital Marketing, Head of Personalization.', createdAt:1700003005000 },
+
+  'tpl-b2c-mkt-fl': { id:'tpl-b2c-mkt-fl', name:'Marketing — Frontline', theme:'B2C', domain:'Customer Engagement', targetTier:'Frontline', contentType:'Cold Outreach',
+    subject:'Automating subscriber journey decisioning so your team focuses on strategy',
+    keyMessages:['Pega automates next-best-action decisions across email, push, and web — no manual campaign builds','Self-optimizing: AI learns from engagement and adjusts automatically','Journey triggers based on real subscriber behavior — usage drops, contract milestones, service events','Reduces campaign operations overhead while improving subscriber response rates'],
+    body:`Hi [Name],\n\nBuilding and managing individual subscriber journeys manually doesn't scale — and the more campaigns your team runs, the harder it becomes to maintain consistency across channels. Most marketing operations teams end up spending more time managing the machinery than improving the strategy.\n\nPega automates the decisioning layer — triggering the right communication for each subscriber based on their actual behavior (usage drops, contract milestones, service events) rather than scheduled sends. Your team configures the strategy; Pega handles execution and continuously self-optimizes based on engagement outcomes.\n\nHappy to show you what this looks like operationally for a team your size. 20 minutes?`,
+    cta:'Could walk you through the operational setup. Interested?', notes:'Good for Marketing Manager, CRM Manager, Campaign Operations Manager. Focus on reducing ops overhead.', createdAt:1700003006000 },
+
+  // ── B2C Customer Service (additional tiers) ──
+  'tpl-b2c-svc-cs': { id:'tpl-b2c-svc-cs', name:'Customer Service — C-Suite', theme:'B2C', domain:'Customer Service', targetTier:'C-Suite', contentType:'Cold Outreach',
+    subject:'Reducing contact center cost while improving subscriber loyalty at [Account]',
+    keyMessages:['Pega Customer Service for Communications: pre-built cable Microjourneys out of the box','AI agent assist reduces average handle time and improves first-call resolution','Omnichannel case management: phone, chat, self-serve, and field in a single view','Retention decisioning at point of disconnect — churn risk + ranked offers in real time'],
+    body:`Hi [Name],\n\nContact center operations in cable are under pressure from two directions at once — subscribers expect faster, more consistent resolution across every channel, while cost-per-interaction targets keep tightening. Most transformation programs I see try to address one without moving the needle on the other.\n\nPega Customer Service for Communications is built specifically for cable operators. Pre-built Microjourneys for disconnect, plan change, outage management, and equipment handling are ready to configure — not build from scratch. AI agent assist surfaces the right next action in real time during calls, reducing handle time and improving resolution rates. And the disconnect retention flow — where churn risk score and ranked win-back offers surface at the exact moment of cancellation — has been one of the highest-ROI capabilities for operators focused on voluntary churn.\n\nWorth 20 minutes to discuss how [Account]'s contact center transformation roadmap aligns with what we've built?`,
+    cta:'Happy to connect — what does your calendar look like?', notes:'Strong for CCO, Chief Customer Officer, VP Customer Experience. Lead with cable-specific Microjourneys and retention ROI.', createdAt:1700003007000 },
+
+  'tpl-b2c-svc-fl': { id:'tpl-b2c-svc-fl', name:'Customer Service — Frontline', theme:'B2C', domain:'Customer Service', targetTier:'Frontline', contentType:'Cold Outreach',
+    subject:'Giving your contact center agents everything they need in one screen',
+    keyMessages:['Single unified agent desktop: subscriber history, case status, and next-best-action in one view','Guided workflows step agents through the right resolution path — reduces training time','AI-suggested responses and offers surface during live calls — no tab-switching','Pre-built for cable: disconnect, billing dispute, outage, equipment swap flows included'],
+    body:`Hi [Name],\n\nAgent experience in cable contact centers is often the bottleneck — not because of the people, but because of the tools. Toggling between billing, CRM, provisioning, and ticketing systems during a live call adds handle time, increases errors, and makes consistent resolution hard to achieve at scale.\n\nPega gives agents a single unified desktop — full subscriber context, case history, guided resolution workflows, and AI-suggested next-best actions all in one screen. Cable-specific flows for disconnect, billing disputes, outage management, and equipment swaps come pre-built and ready to configure. Supervisors get real-time visibility across the queue without building custom reports.\n\nHappy to run a quick demo tailored to your highest-volume contact types. 20 minutes?`,
+    cta:'Could show you the agent desktop live. What works for your schedule?', notes:'Good for Director Contact Center, Supervisor, Head of Agent Experience. Very tactical — lead with the agent desktop demo.', createdAt:1700003008000 },
 
   // ── BSS ──
   'tpl-bss-eng-cs': { id:'tpl-bss-eng-cs', name:'Customer Engagement & Value Mgmt — C-Suite', theme:'BSS', domain:'Customer Engagement', targetTier:'C-Suite', contentType:'Cold Outreach',
