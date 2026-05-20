@@ -1933,7 +1933,9 @@ function openDupPicker() {
   ALL_PERIODS.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.key;
-    opt.textContent = p.label + ' 2026';
+    const mon = p.key.slice(0,7); // e.g. "2026-06"
+    const monLabel = new Date(p.key + 'T12:00:00').toLocaleString('default', { month: 'long' });
+    opt.textContent = `${monLabel} 2026 — ${p.shortLabel}`;
     if (p.key === srcPkey) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -1979,11 +1981,11 @@ function buildDupGrid() {
 
         const lbl = document.createElement('label');
         lbl.className = 'dup-label';
-        lbl.textContent = `${tier.short} · ${fn}`;
+        lbl.textContent = `${tier.label} · ${fn}`;
 
         const badge = document.createElement('span');
         badge.className = 'dup-badge';
-        badge.textContent = existing ? '(already filled)' : '';
+        badge.textContent = existing ? `⚠ already filled: "${existing}"` : '';
 
         row.appendChild(cb);
         row.appendChild(lbl);
