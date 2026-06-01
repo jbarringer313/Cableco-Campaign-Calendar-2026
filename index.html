@@ -1040,10 +1040,6 @@ td.ccell:not(.inactive):hover .ci.empty {
     </div>
     <!-- Campaign panel -->
     <div class="tab-panel active" id="panel-campaign">
-    <div id="group-indicator" class="group-indicator" style="display:none;margin:12px 24px 0;">
-      <span id="group-info-text"></span>
-      <button class="group-update-btn" onclick="updateGroupCampaigns()">↻ Update all in group</button>
-    </div>
     <div class="mb">
       <div class="fl">
         <div class="form-step-label"><span class="form-step-num">1</span> Select Campaign Theme</div>
@@ -1101,6 +1097,10 @@ td.ccell:not(.inactive):hover .ci.empty {
         <label class="flbl">Key Message / Notes</label>
         <textarea class="ftextarea" id="f-cnotes" placeholder="Target persona, key Pega differentiators, assets needed, links, owner…"></textarea>
       </div>
+    </div>
+    <div id="group-sync-row" style="display:none;align-items:center;gap:7px;padding:6px 24px;background:#EFF6FF;border-top:1px solid #BFDBFE;font-size:12px;color:#1E40AF;">
+      <input type="checkbox" id="group-sync-cb" style="accent-color:var(--pega-blue);width:14px;height:14px;">
+      <label for="group-sync-cb" id="group-sync-lbl" style="cursor:pointer;user-select:none;">Apply changes to all linked campaigns</label>
     </div>
     <div class="mf">
       <button class="btn btn-del" id="btn-del" onclick="deleteCampaign()">🗑 Delete</button>
@@ -1957,14 +1957,17 @@ function openModal(key, acct, tier, fn, period) {
   document.getElementById('btn-del').style.display = c.title ? 'block' : 'none';
   document.getElementById('btn-dup').style.display = c.title ? 'block' : 'none';
 
-  // Group indicator (#2)
-  const grpEl = document.getElementById('group-indicator');
-  if (c.groupId) {
+  // Group sync checkbox (#2)
+  const grpRow = document.getElementById('group-sync-row');
+  const grpCb  = document.getElementById('group-sync-cb');
+  const grpLbl = document.getElementById('group-sync-lbl');
+  if (grpRow && c.groupId) {
     const members = getGroupMembers(c.groupId);
-    document.getElementById('group-info-text').textContent = `🔗 Part of a group — ${members.length} linked campaign${members.length !== 1 ? 's' : ''}`;
-    grpEl.style.display = 'flex';
-  } else {
-    grpEl.style.display = 'none';
+    grpLbl.textContent = `Apply changes to all ${members.length} linked campaign${members.length !== 1 ? 's' : ''}`;
+    grpRow.style.display = 'flex';
+    if (grpCb) grpCb.checked = false;
+  } else if (grpRow) {
+    grpRow.style.display = 'none';
   }
 
   // Reset AI tab
@@ -2079,7 +2082,7 @@ function saveCampaign() {
   }
   pushUndo();
   const existingGroupId = data[modalKey]?.groupId;
-  data[modalKey] = {
+  const updated = {
     theme:  selectedThemeVal,
     domain: selectedDomainVal,
     title,
@@ -2089,6 +2092,16 @@ function saveCampaign() {
     ts:     Date.now(),
     ...(existingGroupId ? { groupId: existingGroupId } : {})
   };
+  data[modalKey] = updated;
+
+  // Apply to all linked campaigns if checkbox ticked (#2)
+  const syncAll = document.getElementById('group-sync-cb')?.checked;
+  if (syncAll && existingGroupId) {
+    getGroupMembers(existingGroupId).forEach(k => {
+      if (k !== modalKey) data[k] = Object.assign({}, data[k], updated, { ts: Date.now() });
+    });
+  }
+
   save(); render(); closeModal();
 }
 
