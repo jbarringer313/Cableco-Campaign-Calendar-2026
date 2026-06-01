@@ -414,6 +414,76 @@ td.ccell:not(.inactive):hover .ci.empty {
 .btn-undo:hover:not(:disabled) { background: #FFEDD5; }
 .btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── C-SUITE EDITABLE FUNCTIONS (#4) ── */
+.fn-edit-btn {
+  opacity: 0; border: none; background: none; cursor: pointer;
+  font-size: 11px; padding: 1px 3px; border-radius: 3px; margin-left: 4px;
+  transition: opacity 0.15s;
+}
+.fc:hover .fn-edit-btn { opacity: 1; }
+.cs-add-row td { padding: 3px 8px; }
+.cs-add-btn {
+  background: none; border: 1px dashed var(--border-strong); color: var(--text-muted);
+  font-size: 11px; padding: 3px 12px; border-radius: 4px; cursor: pointer; width: 100%;
+  transition: all 0.12s;
+}
+.cs-add-btn:hover { background: var(--pega-blue-light); color: var(--pega-blue); border-color: var(--pega-blue); }
+
+/* ── GROUP SYNC (#2) ── */
+.group-indicator {
+  font-size: 11px; color: var(--pega-blue); background: var(--pega-blue-light);
+  border: 1px solid #BFDBFE; border-radius: 6px; padding: 5px 10px;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.group-update-btn {
+  background: var(--pega-blue); color: white; border: none; border-radius: 4px;
+  font-size: 11px; font-weight: 600; padding: 3px 10px; cursor: pointer; margin-left: auto;
+}
+.group-update-btn:hover { background: var(--pega-blue-dark); }
+
+/* ── AI DRAFT TAB (#1) ── */
+.ai-prompt-area {
+  padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1;
+}
+.ai-field label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+.ai-field textarea, .ai-field input, .ai-field select {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+  font-size: 13px; font-family: inherit; resize: vertical;
+}
+.ai-field textarea:focus, .ai-field input:focus { outline: none; border-color: var(--pega-blue); }
+.ai-response {
+  background: #F8FAFC; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; font-size: 12px; line-height: 1.6; white-space: pre-wrap;
+  max-height: 220px; overflow-y: auto; display: none;
+}
+.ai-response.visible { display: block; }
+.ai-response strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; }
+.ai-actions { display: flex; gap: 8px; margin-top: 4px; }
+.btn-ai-gen { background: linear-gradient(135deg, #6366F1, #8B5CF6); color: white; padding: 7px 18px; font-weight: 700; }
+.btn-ai-gen:hover { opacity: 0.9; }
+.btn-ai-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ai-use { background: var(--pega-green); color: white; padding: 7px 14px; display: none; }
+.btn-ai-use.visible { display: block; }
+.ai-key-row { display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--text-muted); }
+.ai-key-row input { flex: 1; padding: 5px 8px; border: 1.5px solid var(--border); border-radius: 5px; font-size: 12px; font-family: monospace; }
+.ai-spinner { display: none; font-size: 12px; color: var(--text-muted); }
+.ai-spinner.visible { display: block; }
+
+/* ── CS-EDIT MODAL ── */
+.cs-edit-overlay {
+  position: fixed; inset: 0; background: rgba(15,30,60,0.7); z-index: 8600;
+  display: none; align-items: center; justify-content: center;
+}
+.cs-edit-overlay.open { display: flex; }
+.cs-edit-modal {
+  background: white; border-radius: 14px; padding: 24px; width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.cs-edit-modal h3 { font-size: 15px; font-weight: 800; margin-bottom: 16px; }
+.cs-edit-modal label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
+.cs-edit-modal input { width: 100%; padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 13px; }
+.cs-edit-footer { display: flex; gap: 8px; justify-content: space-between; margin-top: 20px; }
+
 /* ── DRAG AND DROP ── */
 .ccell[draggable=true] { cursor: grab; }
 .ccell[draggable=true]:active { cursor: grabbing; }
@@ -930,7 +1000,7 @@ td.ccell:not(.inactive):hover .ci.empty {
   <div class="legend-item"><div class="ldot" style="background:#4A4A6A"></div>Corp</div>
   <div class="legend-sep"></div>
   <div class="tier-pills">
-    <span class="tier-pill tp-c">C-Suite</span><span class="tier-pill-note">= Monthly</span>
+    <span class="tier-pill tp-c">C-Suite</span><span class="tier-pill-note">= Biweekly</span>
     <span class="tier-pill tp-vp">VP/Dir</span><span class="tier-pill-note">= Biweekly</span>
     <span class="tier-pill tp-fl">Frontline</span><span class="tier-pill-note">= Biweekly</span>
   </div>
@@ -966,9 +1036,14 @@ td.ccell:not(.inactive):hover .ci.empty {
       <div class="modal-tab active" id="tab-campaign" onclick="switchTab('campaign')">📋 Campaign</div>
       <div class="modal-tab" id="tab-audience" onclick="switchTab('audience')">👥 Audience <span id="tab-aud-count"></span></div>
       <div class="modal-tab" id="tab-results" onclick="switchTab('results')">📊 Results <span id="tab-res-count"></span></div>
+      <div class="modal-tab" id="tab-ai" onclick="switchTab('ai')" style="color:#8B5CF6;font-weight:700;">✨ AI Draft</div>
     </div>
     <!-- Campaign panel -->
     <div class="tab-panel active" id="panel-campaign">
+    <div id="group-indicator" class="group-indicator" style="display:none;margin:12px 24px 0;">
+      <span id="group-info-text"></span>
+      <button class="group-update-btn" onclick="updateGroupCampaigns()">↻ Update all in group</button>
+    </div>
     <div class="mb">
       <div class="fl">
         <div class="form-step-label"><span class="form-step-num">1</span> Select Campaign Theme</div>
@@ -1066,6 +1141,55 @@ td.ccell:not(.inactive):hover .ci.empty {
         <button class="btn btn-export-followup" onclick="exportFollowUp()">↓ Export Follow-Up List</button>
       </div>
       <div class="res-list" id="res-list"></div>
+    </div>
+
+    <!-- AI Draft panel (#1) -->
+    <div class="tab-panel" id="panel-ai">
+      <div class="ai-prompt-area">
+        <div class="ai-key-row">
+          <span>🔑 Anthropic API key:</span>
+          <input type="password" id="ai-api-key" placeholder="sk-ant-..." oninput="saveAiKey(this.value)">
+          <span id="ai-key-status" style="font-size:11px;color:var(--pega-green)"></span>
+        </div>
+        <div class="ai-field">
+          <label>What do you want this email to accomplish?</label>
+          <textarea id="ai-prompt" rows="3" placeholder="e.g. Cold outreach to VP of IT at Comcast about Pega's order management solution — emphasize speed to value and integration with legacy BSS..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="ai-field" style="flex:1">
+            <label>Tone</label>
+            <select id="ai-tone">
+              <option>Professional / Concise</option>
+              <option>Executive-level / Strategic</option>
+              <option>Technical / Detailed</option>
+              <option>Warm / Conversational</option>
+            </select>
+          </div>
+          <div class="ai-field" style="flex:1">
+            <label>Email length</label>
+            <select id="ai-length">
+              <option>Short (3–4 sentences)</option>
+              <option selected>Medium (2–3 paragraphs)</option>
+              <option>Long (full pitch)</option>
+            </select>
+          </div>
+        </div>
+        <div class="ai-actions">
+          <button class="btn btn-ai-gen" id="ai-gen-btn" onclick="generateAiDraft()">✨ Generate Draft</button>
+          <span class="ai-spinner" id="ai-spinner">⏳ Generating…</span>
+        </div>
+        <div class="ai-response" id="ai-response">
+          <strong>Subject:</strong><span id="ai-subj"></span>
+          <br><strong style="margin-top:8px;">Body:</strong><span id="ai-body"></span>
+        </div>
+        <div class="ai-actions" style="margin-top:0">
+          <button class="btn btn-ai-use" id="ai-use-btn" onclick="useAiDraft()">✅ Use This Draft</button>
+          <button class="btn btn-cancel" id="ai-regen-btn" onclick="generateAiDraft()" style="display:none">↺ Regenerate</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px;" id="ai-note">
+          Calls Anthropic API directly from your browser. If you get a CORS error, see <a href="https://github.com/jbarringer313/Cableco-Campaign-Calendar-2026#ai-setup" target="_blank" style="color:var(--pega-blue)">proxy setup instructions</a>.
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1234,12 +1358,23 @@ const ACCOUNTS = [
 ];
 
 const TIERS = [
-  { id: 'C-Suite',    label: 'C-Suite',      short: 'C-Suite', cadence: 'monthly',   badge: 'tb-c' },
+  { id: 'C-Suite',    label: 'C-Suite',      short: 'C-Suite', cadence: 'biweekly',  badge: 'tb-c' },
   { id: 'VP/Director',label: 'VP / Director',short: 'VP/Dir',  cadence: 'biweekly',  badge: 'tb-vp' },
   { id: 'Frontline',  label: 'Frontline',    short: 'FL',      cadence: 'biweekly',  badge: 'tb-fl' }
 ];
 
 const FUNCTIONS = ['Operations','IT','Marketing','Sales','Network','Customer Service','Shared Services'];
+
+// Per-account function exclusions (#3)
+const ACCOUNT_EXCLUDE_FNS = {
+  'Universal Destinations & Experiences': ['Network']
+};
+function getAccountFunctions(acct) {
+  const exclude = ACCOUNT_EXCLUDE_FNS[acct] || [];
+  const base = FUNCTIONS.filter(f => !exclude.includes(f));
+  // Merge in any custom C-Suite extras (stored in customCsFns)
+  return base;
+}
 
 const THEMES = {
   'B2B':               { cls: 'theme-b2b',     color: '#0F52BA' },
@@ -1447,9 +1582,13 @@ function startFirebase(cfg) {
 
     // Push default templates to Firebase on first run (if empty)
     db.ref('/templates').once('value', snap => {
-      if (!snap.val()) {
-        db.ref('/templates').set(DEFAULT_TEMPLATES);
-      }
+      if (!snap.val()) db.ref('/templates').set(DEFAULT_TEMPLATES);
+    });
+
+    // Sync custom C-Suite functions (#4)
+    db.ref('/customCsFns').on('value', snap => {
+      const remote = snap.val();
+      if (remote) { customCsFns = remote; render(); }
     });
 
   } catch(e) {
@@ -1537,12 +1676,11 @@ function syncSubThemeFilter() {
 // ═══════════════════════════════════════════════
 function render() {
   const f = getF();
-  const showMonthly = f.tier === 'C-Suite';
-  const periods = showMonthly ? MONTH_PERIODS : ALL_PERIODS;
+  const periods = ALL_PERIODS; // all tiers now biweekly
 
   const accts = f.acct ? [f.acct] : ACCOUNTS;
   const tiers = f.tier ? TIERS.filter(t => t.id === f.tier) : TIERS;
-  const fns   = f.fn   ? [f.fn]   : FUNCTIONS;
+  const fnFilter = f.fn || null; // null = show all per-account functions
 
   // HEAD
   const head = document.getElementById('tbl-head');
@@ -1599,10 +1737,13 @@ function render() {
     body.appendChild(divRow);
 
     tiers.forEach(tier => {
-      // All tiers iterate over functions
-      const rowDefs = fns.map(fn => ({ fn, fnLabel: fn }));
+      // Per-account function list (#3/#4)
+      const acctFns = tier.id === 'C-Suite'
+        ? getCsSuiteFunctions(acct)
+        : getAccountFunctions(acct);
+      const rowFns = fnFilter ? (acctFns.includes(fnFilter) ? [fnFilter] : []) : acctFns;
 
-      rowDefs.forEach(({ fn, fnLabel }) => {
+      rowFns.forEach(fn => {
         visRows++;
         const tr = document.createElement('tr');
 
@@ -1611,24 +1752,25 @@ function render() {
         // Tier badge
         const tdT = document.createElement('td'); tdT.className = 'fc';
         tdT.innerHTML = `<span class="tier-badge ${tier.badge}">${tier.short}</span>`; tr.appendChild(tdT);
-        // Function + contact count badge
+        // Function label — editable for C-Suite (#4)
         const tdF = document.createElement('td'); tdF.className = 'fc';
         const cnt = getContactCount(acct, tier.id, fn);
         const badgeCls = cnt > 0 ? 'cnt-badge has-data' : 'cnt-badge';
-        tdF.innerHTML = `<span class="fn-text">${fnLabel}</span>${cnt > 0 ? `<span class="${badgeCls}">${cnt}</span>` : ''}`;
+        const cntHtml = cnt > 0 ? `<span class="${badgeCls}">${cnt}</span>` : '';
+        if (tier.id === 'C-Suite') {
+          tdF.innerHTML = `<span class="fn-text">${esc(fn)}</span>${cntHtml}<button class="fn-edit-btn" title="Rename or remove" onclick="openCsEdit(event,'${esc(acct)}','${esc(fn)}')">✏️</button>`;
+        } else {
+          tdF.innerHTML = `<span class="fn-text">${esc(fn)}</span>${cntHtml}`;
+        }
         tr.appendChild(tdF);
 
         periods.forEach(period => {
           const td = document.createElement('td');
-          const isActive = tier.cadence === 'biweekly' || period.isFirst;
           if(period.isFirst) td.classList.add('month-start');
-
-          if (!isActive) {
-            td.className = 'ccell inactive'; tr.appendChild(td); return;
-          }
 
           totalActive++;
           td.className = 'ccell';
+          // (all cells active — C-Suite now biweekly like other tiers)
 
           const k = ckey(acct, tier.id, fn, period.key);
           const c = data[k];
@@ -1651,7 +1793,7 @@ function render() {
             </div>`;
             setupDragOnCell(td, k);
           } else {
-            td.onclick = () => openModal(k, acct, tier, fnLabel, period);
+            td.onclick = () => openModal(k, acct, tier, fn, period);
             td.innerHTML = `<div class="ci empty">+</div>`;
           }
 
@@ -1663,6 +1805,17 @@ function render() {
 
         body.appendChild(tr);
       });
+
+      // Add Executive row for C-Suite (#4)
+      if (tier.id === 'C-Suite' && !fnFilter) {
+        const addRow = document.createElement('tr');
+        addRow.className = 'cs-add-row';
+        const addTd = document.createElement('td');
+        addTd.colSpan = 3 + periods.length;
+        addTd.innerHTML = `<button class="cs-add-btn" onclick="openCsAdd('${esc(acct)}')">＋ Add Executive Row for ${esc(acct)}</button>`;
+        addRow.appendChild(addTd);
+        body.appendChild(addRow);
+      }
     });
   });
 
@@ -1670,7 +1823,7 @@ function render() {
   const sb = document.getElementById('summary-bar');
   const acctStr = accts.length === ACCOUNTS.length ? 'all 6 accounts' : accts.join(', ');
   const tierStr = tiers.map(t=>t.label).join(' · ');
-  const fnStr = fns.length === FUNCTIONS.length ? 'all functions' : fns.join(', ');
+  const fnStr = fnFilter ? fnFilter : 'all functions';
   sb.innerHTML = `<span class="summary-tag">${visRows} rows</span> &nbsp;${acctStr} · ${tierStr} · ${fnStr} &nbsp;–&nbsp; <strong>${filled}</strong> campaigns filled`;
 
   updateKPIs();
@@ -1804,6 +1957,22 @@ function openModal(key, acct, tier, fn, period) {
   document.getElementById('btn-del').style.display = c.title ? 'block' : 'none';
   document.getElementById('btn-dup').style.display = c.title ? 'block' : 'none';
 
+  // Group indicator (#2)
+  const grpEl = document.getElementById('group-indicator');
+  if (c.groupId) {
+    const members = getGroupMembers(c.groupId);
+    document.getElementById('group-info-text').textContent = `🔗 Part of a group — ${members.length} linked campaign${members.length !== 1 ? 's' : ''}`;
+    grpEl.style.display = 'flex';
+  } else {
+    grpEl.style.display = 'none';
+  }
+
+  // Reset AI tab
+  document.getElementById('ai-response').classList.remove('visible');
+  document.getElementById('ai-use-btn').classList.remove('visible');
+  document.getElementById('ai-regen-btn').style.display = 'none';
+  loadAiKey();
+
   document.getElementById('overlay').classList.add('open');
   setTimeout(() => document.getElementById('f-ctitle').focus(), 120);
 }
@@ -1909,6 +2078,7 @@ function saveCampaign() {
     return;
   }
   pushUndo();
+  const existingGroupId = data[modalKey]?.groupId;
   data[modalKey] = {
     theme:  selectedThemeVal,
     domain: selectedDomainVal,
@@ -1916,7 +2086,8 @@ function saveCampaign() {
     type:   document.getElementById('f-ctype').value,
     status: document.getElementById('f-cstatus').value,
     notes:  document.getElementById('f-cnotes').value.trim(),
-    ts:     Date.now()
+    ts:     Date.now(),
+    ...(existingGroupId ? { groupId: existingGroupId } : {})
   };
   save(); render(); closeModal();
 }
@@ -2038,14 +2209,17 @@ function confirmDuplicate() {
   if (!dupSourceKey || !data[dupSourceKey]) return;
   const src = data[dupSourceKey];
   const checked = document.querySelectorAll('#dup-grid .dup-cb:checked');
-  pushUndo();  // snapshot BEFORE modifying data
+  pushUndo();
+  // Assign a shared groupId to all copies + source (#2)
+  const groupId = src.groupId || `grp_${Date.now()}`;
+  data[dupSourceKey] = Object.assign({}, src, { groupId });
   checked.forEach(cb => {
     const k = cb.closest('.dup-row').dataset.key;
-    data[k] = Object.assign({}, src, { ts: Date.now() });
+    data[k] = Object.assign({}, src, { ts: Date.now(), groupId });
   });
   const count = checked.length;
   save(); render(); closeDupPicker();
-  showToast(`✅ Copied to ${count} row${count > 1 ? 's' : ''}`);
+  showToast(`✅ Copied to ${count} row${count > 1 ? 's' : ''} — grouped for sync`);
 }
 
 // ═══════════════════════════════════════════════
@@ -2131,6 +2305,227 @@ function showToast(msg) {
 }
 
 // ═══════════════════════════════════════════════
+//  C-SUITE CUSTOM FUNCTIONS (#4)
+// ═══════════════════════════════════════════════
+let customCsFns = {}; // { [acct]: string[] }
+
+function getCsSuiteFunctions(acct) {
+  if (customCsFns[acct]) return customCsFns[acct];
+  return getAccountFunctions(acct);
+}
+
+function loadCustomCsFns() {
+  try {
+    const s = localStorage.getItem('pega_me_cs_fns_v1');
+    if (s) customCsFns = JSON.parse(s);
+  } catch(e) {}
+}
+
+function saveCustomCsFns() {
+  localStorage.setItem('pega_me_cs_fns_v1', JSON.stringify(customCsFns));
+  if (fbMode && db) db.ref('/customCsFns').set(customCsFns);
+}
+
+function openCsEdit(e, acct, fn) {
+  e.stopPropagation();
+  document.getElementById('cs-edit-acct').value = acct;
+  document.getElementById('cs-edit-old-fn').value = fn;
+  document.getElementById('cs-edit-name').value = fn;
+  document.getElementById('cs-edit-title').textContent = `Edit: ${fn}`;
+  document.getElementById('cs-edit-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('cs-edit-name').focus(), 80);
+}
+
+function openCsAdd(acct) {
+  document.getElementById('cs-edit-acct').value = acct;
+  document.getElementById('cs-edit-old-fn').value = '';
+  document.getElementById('cs-edit-name').value = '';
+  document.getElementById('cs-edit-title').textContent = `Add Executive Row — ${acct}`;
+  document.getElementById('cs-edit-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('cs-edit-name').focus(), 80);
+}
+
+function closeCsEdit() {
+  document.getElementById('cs-edit-overlay').classList.remove('open');
+}
+
+function saveCsEdit() {
+  const acct   = document.getElementById('cs-edit-acct').value;
+  const oldFn  = document.getElementById('cs-edit-old-fn').value;
+  const newFn  = document.getElementById('cs-edit-name').value.trim();
+  if (!newFn) return;
+
+  // Get current list or default
+  const current = [...getCsSuiteFunctions(acct)];
+
+  if (!oldFn) {
+    // ADD new row
+    if (!current.includes(newFn)) current.push(newFn);
+  } else if (oldFn !== newFn) {
+    // RENAME — update display list and migrate data keys
+    const idx = current.indexOf(oldFn);
+    if (idx > -1) current[idx] = newFn;
+    // Migrate campaign data keys
+    const migrated = {};
+    Object.entries(data).forEach(([k, v]) => {
+      const parts = k.split('||');
+      if (parts[0] === acct && parts[1] === 'C-Suite' && parts[2] === oldFn) {
+        migrated[ckey(acct, 'C-Suite', newFn, parts[3])] = v;
+      } else {
+        migrated[k] = v;
+      }
+    });
+    pushUndo();
+    data = migrated;
+    save();
+  }
+
+  customCsFns[acct] = current;
+  saveCustomCsFns();
+  closeCsEdit();
+  render();
+}
+
+function deleteCsRow() {
+  const acct  = document.getElementById('cs-edit-acct').value;
+  const oldFn = document.getElementById('cs-edit-old-fn').value;
+  if (!oldFn) { closeCsEdit(); return; }
+  if (!confirm(`Remove the "${oldFn}" row for ${acct}? Campaign data in those cells will be preserved but hidden.`)) return;
+
+  const current = getCsSuiteFunctions(acct).filter(f => f !== oldFn);
+  customCsFns[acct] = current;
+  saveCustomCsFns();
+  closeCsEdit();
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  GROUP SYNC (#2)
+// ═══════════════════════════════════════════════
+function getGroupMembers(groupId) {
+  return Object.entries(data)
+    .filter(([, v]) => v && v.groupId === groupId)
+    .map(([k]) => k);
+}
+
+function updateGroupCampaigns() {
+  const c = data[modalKey];
+  if (!c?.groupId) return;
+  const members = getGroupMembers(c.groupId).filter(k => k !== modalKey);
+  if (!members.length) { showToast('No other campaigns in this group'); return; }
+
+  // Read current form values
+  const title  = document.getElementById('f-ctitle').value.trim();
+  const type   = document.getElementById('f-ctype').value;
+  const status = document.getElementById('f-cstatus').value;
+  const notes  = document.getElementById('f-cnotes').value.trim();
+
+  if (!confirm(`Apply these changes to all ${members.length + 1} campaigns in this group?`)) return;
+  pushUndo();
+  members.forEach(k => {
+    data[k] = Object.assign({}, data[k], {
+      theme: selectedThemeVal, domain: selectedDomainVal,
+      title, type, status, notes, ts: Date.now()
+    });
+  });
+  // Also save current cell
+  data[modalKey] = Object.assign({}, c, {
+    theme: selectedThemeVal, domain: selectedDomainVal,
+    title, type, status, notes, ts: Date.now()
+  });
+  save(); render();
+  showToast(`↻ Updated ${members.length + 1} campaigns`);
+}
+
+// ═══════════════════════════════════════════════
+//  AI DRAFT (#1)
+// ═══════════════════════════════════════════════
+function saveAiKey(val) {
+  localStorage.setItem('pega_ai_key', val);
+  document.getElementById('ai-key-status').textContent = val ? '✓ saved' : '';
+}
+
+function loadAiKey() {
+  const k = localStorage.getItem('pega_ai_key') || '';
+  const el = document.getElementById('ai-api-key');
+  if (el) { el.value = k; document.getElementById('ai-key-status').textContent = k ? '✓ saved' : ''; }
+}
+
+async function generateAiDraft() {
+  const apiKey = document.getElementById('ai-api-key').value.trim();
+  const prompt = document.getElementById('ai-prompt').value.trim();
+  if (!apiKey) { alert('Please enter your Anthropic API key first.'); return; }
+  if (!prompt) { alert('Please describe what you want the email to accomplish.'); return; }
+
+  const tone   = document.getElementById('ai-tone').value;
+  const length = document.getElementById('ai-length').value;
+  const ctx    = document.getElementById('m-sub')?.textContent || '';
+
+  const systemPrompt = `You are an expert B2B sales email writer for Pega Systems, writing outreach to cable/telecom executives. Write professional, concise, value-focused emails. Never use filler phrases like "I hope this finds you well." Always focus on business outcomes and ROI.`;
+
+  const userPrompt = `Campaign context: ${ctx}\nTheme: ${selectedThemeVal || 'General'}\nTone: ${tone}\nLength: ${length}\n\nInstructions: ${prompt}\n\nRespond with exactly this format:\nSUBJECT: [subject line]\nBODY:\n[email body]`;
+
+  const genBtn = document.getElementById('ai-gen-btn');
+  const spinner = document.getElementById('ai-spinner');
+  const responseEl = document.getElementById('ai-response');
+  genBtn.disabled = true;
+  spinner.classList.add('visible');
+  responseEl.classList.remove('visible');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API error ${res.status}`);
+    }
+
+    const json = await res.json();
+    const text = json.content?.[0]?.text || '';
+
+    const subjMatch = text.match(/^SUBJECT:\s*(.+)/m);
+    const bodyMatch = text.match(/^BODY:\s*([\s\S]+)/m);
+
+    document.getElementById('ai-subj').textContent = subjMatch ? subjMatch[1].trim() : '';
+    document.getElementById('ai-body').textContent = bodyMatch ? bodyMatch[1].trim() : text;
+
+    responseEl.classList.add('visible');
+    document.getElementById('ai-use-btn').classList.add('visible');
+    document.getElementById('ai-regen-btn').style.display = 'block';
+    document.getElementById('ai-note').style.display = 'none';
+
+  } catch(err) {
+    alert(`Error: ${err.message}\n\nIf you see a CORS error, you need a proxy. See the setup instructions link below.`);
+  } finally {
+    genBtn.disabled = false;
+    spinner.classList.remove('visible');
+  }
+}
+
+function useAiDraft() {
+  const subj = document.getElementById('ai-subj').textContent;
+  const body = document.getElementById('ai-body').textContent;
+  if (subj) document.getElementById('f-ctitle').value = subj;
+  if (body) document.getElementById('f-cnotes').value = body;
+  switchTab('campaign');
+  showToast('✅ Draft applied to campaign form');
+}
+
+// ═══════════════════════════════════════════════
 //  EXPORT
 // ═══════════════════════════════════════════════
 function exportCSV() {
@@ -2164,6 +2559,7 @@ document.addEventListener('keydown', e => {
     closeTemplateLibrary();
     closeTplPicker();
     closeDupPicker();
+    closeCsEdit();
   }
   if ((e.metaKey||e.ctrlKey) && e.key==='Enter' && document.getElementById('overlay').classList.contains('open')) saveCampaign();
   if ((e.metaKey||e.ctrlKey) && e.key==='z' && !document.getElementById('overlay').classList.contains('open')) { e.preventDefault(); undoLastAction(); }
@@ -2183,9 +2579,9 @@ function loadResults() {
 function saveResults() { localStorage.setItem('pega_me_results_v1', JSON.stringify(results)); }
 
 function switchTab(tab) {
-  ['campaign','audience','results'].forEach(t => {
-    document.getElementById(`panel-${t}`).classList.toggle('active', t===tab);
-    document.getElementById(`tab-${t}`).classList.toggle('active', t===tab);
+  ['campaign','audience','results','ai'].forEach(t => {
+    document.getElementById(`panel-${t}`)?.classList.toggle('active', t===tab);
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t===tab);
   });
   if (tab==='audience') renderAudienceList();
   if (tab==='results') renderResultsList();
@@ -3678,6 +4074,7 @@ function copyTeamLink(btn) {
 load();          // local cache for initial paint
 loadResults();
 loadTemplates();
+loadCustomCsFns(); // custom C-Suite function labels (#4)
 syncSubThemeFilter();
 initTeamMode();
 render();        // initial render from local cache
@@ -3688,6 +4085,24 @@ saveTemplates = saveTemplatesWithFb;
 // Connect to Firebase after DOM is fully parsed (overlay div comes after this script)
 document.addEventListener('DOMContentLoaded', initFirebaseOrSetup);
 </script>
+
+<!-- ── C-SUITE EDIT MODAL (#4) ── -->
+<div class="cs-edit-overlay" id="cs-edit-overlay" onclick="if(event.target===this)closeCsEdit()">
+  <div class="cs-edit-modal">
+    <h3 id="cs-edit-title">Edit Executive Row</h3>
+    <input type="hidden" id="cs-edit-acct">
+    <input type="hidden" id="cs-edit-old-fn">
+    <label>Display name</label>
+    <input type="text" id="cs-edit-name" placeholder="e.g. Tom Rutledge — CEO">
+    <div class="cs-edit-footer">
+      <button class="btn btn-del" style="display:block" onclick="deleteCsRow()">🗑 Remove Row</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-cancel" onclick="closeCsEdit()">Cancel</button>
+        <button class="btn btn-save" onclick="saveCsEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ── DUPLICATE PICKER OVERLAY ── -->
 <div class="dup-overlay" id="dup-overlay" onclick="if(event.target===this)closeDupPicker()">
