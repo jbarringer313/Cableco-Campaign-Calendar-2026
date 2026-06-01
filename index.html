@@ -1784,7 +1784,7 @@ function render() {
             filled++;
             const th = THEMES[c.theme] || THEMES['Other / TBD'];
             const statCls = STATUS_CLS[c.status] || 'stat-ns';
-            td.onclick = () => openModal(k, acct, tier, fnLabel, period);
+            td.onclick = () => openModal(k, acct, tier, fn, period);
             td.innerHTML = `<div class="ci filled ${statCls}">
               <div class="ci-theme" style="color:${th.color}">${c.theme || 'Other'}</div>
               <div class="ci-title">${esc(c.title)}</div>
