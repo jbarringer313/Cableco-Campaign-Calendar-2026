@@ -1068,6 +1068,7 @@ td.ccell:not(.inactive):hover .ci.empty {
             <option value="">— Select —</option>
             <option>Executive Brief</option>
             <option>Email Campaign</option>
+            <option>Phone Call</option>
             <option>LinkedIn Post</option>
             <option>Webinar / Demo</option>
             <option>Executive Roundtable</option>
@@ -1265,6 +1266,7 @@ td.ccell:not(.inactive):hover .ci.empty {
                     <option value="">— Select —</option>
                     <option>Executive Brief</option>
                     <option>Email Campaign</option>
+                    <option>Phone Call</option>
                     <option>LinkedIn Post</option>
                     <option>Webinar / Demo</option>
                     <option>Executive Roundtable</option>
@@ -1403,18 +1405,18 @@ const THEME_ICON = {
   'Other / TBD':       '📌',
 };
 
-// Two fixed sends per month: 1st (Wk 1) and 15th (Wk 3), June–November 2026
-// isFirst = true for Wk 1 (1st of month) — C-Suite only active on isFirst columns
+// Four weeks per month: 1st, 8th, 15th, 22nd — June–December 2026
 function genPeriods() {
   const out = [];
+  const weekLabels = ['Wk 1','Wk 2','Wk 3','Wk 4'];
   for (let m = 5; m <= 11; m++) { // 5=June, 11=December (0-indexed)
-    [1, 15].forEach(day => {
+    [1, 8, 15, 22].forEach((day, idx) => {
       const d = new Date(2026, m, day);
       const iso = d.toISOString().slice(0, 10);
       const mon = d.toLocaleString('default', { month: 'short' });
       const mkey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       const isFirst = day === 1;
-      out.push({ key: iso, label: isFirst ? mon : `${mon} 15`, shortLabel: isFirst ? 'Wk 1' : 'Wk 3', monthKey: mkey, isFirst });
+      out.push({ key: iso, label: `${mon} ${day}`, shortLabel: weekLabels[idx], monthKey: mkey, isFirst });
     });
   }
   return out;
