@@ -2134,11 +2134,15 @@ function buildDupGrid() {
     grid.appendChild(hdr);
 
     TIERS.forEach(tier => {
-      // Only include this tier if the target period is valid for its cadence
-      const validPeriods = tier.cadence === 'monthly' ? MONTH_PERIODS : ALL_PERIODS;
-      if (!validPeriods.find(p => p.key === targetPkey)) return;
+      // All tiers are now biweekly — all periods are valid
+      if (!ALL_PERIODS.find(p => p.key === targetPkey)) return;
 
-      FUNCTIONS.forEach(fn => {
+      // Use custom C-Suite names if set, otherwise standard per-account functions
+      const acctFns = tier.id === 'C-Suite'
+        ? getCsSuiteFunctions(acct)
+        : getAccountFunctions(acct);
+
+      acctFns.forEach(fn => {
         const k = ckey(acct, tier.id, fn, targetPkey);
         if (k === dupSourceKey) return; // skip source cell
 
